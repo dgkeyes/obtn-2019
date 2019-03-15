@@ -1,3 +1,18 @@
+---
+title: "OBTN alternative race/ethnicity plots"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F,
+                      warning = F,
+                      message = F)
+```
+
+```{r}
 # Packages ----------------------------------------------------------------
 
 library(tidyverse)
@@ -12,6 +27,19 @@ library(Cairo)
 
 source(here("R", "functions.R"))
 source(here("R", "tfff-themes.R"))
+
+# Update tfff_light_green
+
+tfff_light_green <- "#CFDEB7"
+
+```
+
+Note: all plots done for Latino population
+
+
+# By county by percentage within county
+
+```{r include = F}
 
 
 # Get OBTN data -----------------------------------------------------------
@@ -45,6 +73,9 @@ race_ethnicity_groups <- race_ethnicity_data %>%
 
 # Get geodata -------------------------------------------------------------
 
+by_county_by_pct_within_county <- dk_oregon_counties_geodata() %>% 
+     left_join(race_ethnicity_data, by = c("name" = "geography")) 
+
 oregon_counties_geodata <- dk_oregon_counties_geodata() %>% 
      left_join(race_ethnicity_data, by = c("name" = "geography")) 
 
@@ -53,7 +84,7 @@ oregon_counties_geodata <- dk_oregon_counties_geodata() %>%
 
 dk_make_race_ethnicity_map <- function(race_ethnicity_group) {
      
-     oregon_counties_geodata_filtered <- oregon_counties_geodata %>% 
+     oregon_counties_geodata_filtered <- by_county_by_pct_within_county %>% 
           filter(population == race_ethnicity_group)
      
      ggplot(oregon_counties_geodata_filtered) +
@@ -70,102 +101,55 @@ dk_make_race_ethnicity_map <- function(race_ethnicity_group) {
      
 }
 
-dk_save_race_ethnicity_map <- function(plot_category, plotwidth, plotheight) {
-     
-     plot_category <- str_to_lower(plot_category)
-     plot_category <- str_replace_all(plot_category, " ", "-")
-     plot_category <- str_replace(plot_category, "\\/", "-")
-     
-     ggsave(filename = paste0("plots/by-measure/race-ethnicity/",
-                              plot_category,
-                              ".pdf"),
-            device = cairo_pdf,
-            width = plotwidth,
-            height = plotheight)
-}
 
 
-dk_make_race_ethnicity_map(race_ethnicity_groups[1])
+```
 
+```{r}
+dk_make_race_ethnicity_map("Latino")
+```
 
-for (i in 1:8) {
-     dk_make_race_ethnicity_map(race_ethnicity_groups[i])
-     dk_save_race_ethnicity_map(race_ethnicity_groups[i], 10, 8)
-}
+# By county by number of people
 
+```{r include = F}
 
-
-
-# By total population -----------------------------------------------------
-
-counties_total_pop <- read_excel(here("data", "obtn-by-county.xlsx"),
-                                 sheet = "Total Population") %>% 
+county_populations <- read_excel(here("data", "race-ethnicity-by-tract.xlsx"),
+                                 skip = 2) %>% 
      clean_names() %>% 
-     set_names(c("county", "total_pop"))
+     slice(2:37) %>% 
+     select(geography:estimate_total) %>% 
+     mutate(geography = str_remove(geography, " County, Oregon"))
 
-oregon_counties_geodata_total_pop <- oregon_counties_geodata %>% 
-     left_join(counties_total_pop, by = c("name" = "county")) %>% 
-     mutate(subgroup_pop = total_pop * pct) %>% 
-     filter(population == "Latino") %>% 
-     mutate(pct_of_total = prop.table(subgroup_pop))
+by_county_by_number_within_county <- dk_oregon_counties_geodata() %>% 
+     left_join(race_ethnicity_data, by = c("name" = "geography")) %>% 
+     left_join(county_populations, by = c("name" = "geography")) %>% 
+     mutate(group_population = pct * estimate_total)
 
-ggplot(oregon_counties_geodata_total_pop) +
-     geom_sf(aes(fill = pct_of_total),
+```
+
+```{r}
+by_county_by_number_within_county_filtered <- by_county_by_number_within_county %>% 
+     filter(population == "Latino")
+
+ggplot(by_county_by_number_within_county_filtered) +
+     geom_sf(aes(fill = group_population),
              # fill =  tfff_dark_green,
              color = "white") +
      coord_sf(datum = NA) +
      scale_fill_gradient(low = tfff_light_green,
-                         high = tfff_dark_green,
-                         labels = percent_format(1)) +
+                         high = tfff_dark_green) +
      tfff_map_theme +
      theme(legend.position = "bottom") +
      guides(fill = guide_legend(nrow = 1))
-
-
-# At census tract level (tidycensus) ---------------------------------------------------
-
-library(tidycensus)
-options(tigris_use_cache = TRUE)
-
-# acs_vars <- load_variables(2016, "acs5", cache = TRUE)
-
-
-white_population <- get_acs("tract",
-                            variables = (white = "B01001H_001"),
-                            state = "OR",
-                            geometry = TRUE) %>% 
-     rename("white_pop" = "estimate")
-
-total_population <- get_acs("tract",
-                            variables = (total_pop = "B01001_001"),
-                            state = "OR") %>% 
-     rename("total_pop" = "estimate")
-
-white_pop_by_census_tract <- white_population %>% 
-     left_join(total_population, by = "GEOID") %>% 
-     mutate(pct = white_pop / total_pop)
-
-ggplot(white_pop_by_census_tract) +
-     geom_sf(aes(fill = pct),
-             color = tfff_light_gray,
-             size = .1) +
-     geom_sf(data = oregon_counties_geodata,
-             fill =  "transparent",
-             color = "white",
-             size = 0.2) +
-     coord_sf(datum = NA) +
-     coord_sf(datum = NA) +
-     scale_fill_gradient(low = tfff_light_green,
-                         high = tfff_dark_green,
-                         labels = percent_format(1)) +
-     tfff_map_theme +
-     theme(legend.position = "bottom") +
-     guides(fill = guide_legend(nrow = 1))
+```
 
 
 
-# At census tract (OSU data) ----------------------------------------------
 
+# By Census tract by percentage within county
+
+
+```{r include = F}
 race_ethnicity_by_tract <- read_excel(here("data", "race-ethnicity-by-tract.xlsx"),
                                       skip = 2) %>% 
      clean_names() %>% 
@@ -185,6 +169,10 @@ oregon_tracts_geodata <- tracts("OR", cb = T, class="sf") %>%
      left_join(race_ethnicity_by_tract, by = c("geoid" = "id2")) %>% 
      filter(str_detect(group, "estimate_hispanic_or_latino"))
 
+
+```
+
+```{r}
 ggplot(oregon_tracts_geodata) +
      geom_sf(aes(fill = pct),
              color = "transparent",
@@ -200,3 +188,42 @@ ggplot(oregon_tracts_geodata) +
      tfff_map_theme +
      theme(legend.position = "bottom") +
      guides(fill = guide_legend(nrow = 1))
+```
+
+
+
+# By Census tract by number of people
+
+```{r include = F}
+
+tract_total_populations <- read_excel(here("data", "race-ethnicity-by-tract.xlsx"),
+                                                                 skip = 2) %>% 
+     clean_names() %>% 
+     filter(str_detect(geography, "Tract")) %>% 
+     select(id2, estimate_total) %>% 
+     mutate(id2 = as.character(id2))
+
+by_tract_by_number <- oregon_tracts_geodata %>% 
+     left_join(tract_total_populations, by = c("geoid" = "id2")) %>% 
+     mutate(group_population = pct * estimate_total) 
+
+```
+
+```{r}
+ggplot(by_tract_by_number) +
+     geom_sf(aes(fill = group_population),
+             color = "transparent",
+             size = .1) +
+     geom_sf(data = oregon_counties_geodata,
+             fill =  "transparent",
+             color = "white",
+             size = 0.2) +
+     coord_sf(datum = NA) +
+     scale_fill_gradient(low = tfff_light_green,
+                         high = tfff_dark_green) +
+     tfff_map_theme +
+     theme(legend.position = "bottom") +
+     guides(fill = guide_legend(nrow = 1))
+```
+
+

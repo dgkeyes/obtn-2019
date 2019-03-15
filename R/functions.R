@@ -56,10 +56,10 @@ dk_save_plot <- function(plot_category, plotwidth, plotheight) {
 
 dk_save_plot_by_measure <- function(plot_category, plotwidth, plotheight) {
      ggsave(filename = paste0("plots/by-measure/",
-                             plot_category,
-                             "/",
-                             oregon.counties[i],
-                             ".pdf"),
+                              plot_category,
+                              "/",
+                              oregon.counties[i],
+                              ".pdf"),
             device = cairo_pdf,
             width = plotwidth,
             height = plotheight)

@@ -41,9 +41,22 @@ dk_make_inset_map <- function(county) {
           tfff_map_theme
 }
 
+dk_save_inset_map <- function(county, plotwidth, plotheight) {
+     county <- str_to_lower(county)
+     county <- str_replace(county, " ", "-")
+     
+     ggsave(filename = paste0("plots/misc/inset-maps/",
+                              county,
+                              ".pdf"),
+            device = cairo_pdf,
+            width = plotwidth,
+            height = plotheight)
+     }
+
+
 
 for (i in 1:36) {
      dk_make_inset_map(oregon_counties[i])
-     dk_save_plot("inset-map", 1.2313, 1.1225)
+     dk_save_inset_map(oregon_counties[i], 8.5, 11)
 }
 
