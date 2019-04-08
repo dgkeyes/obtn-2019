@@ -1,6 +1,13 @@
+
+# Packages ----------------------------------------------------------------
+
+library(extrafont)
+
+loadfonts()
+
 # Define colors -----------------------------------------------------------
 
-tfff_dark_green <- "#2E7D32"
+tfff_dark_green <- "#265142"
 tfff_light_green <- "#B5CC8E"
 tfff_orange <- "#e65100"
 tfff_yellow <- "#FBC02D"
@@ -14,6 +21,16 @@ tfff_blues <- c("#1a237e", "#303f9f", "#3f51b5", "#7986cb", "#c5cae9" )
 tfff_oranges <- c("#ffe0b2", "#ffb74d", "#fb8c00", "#e65100")
 
 
+# tfff_choropleth_colors <- c("#dddddd", 
+#                             "#B5CC8E", 
+#                             "#6E8F68", 
+#                             "#265142")
+
+tfff_choropleth_colors <- rev(c("#dddddd",
+                                "#B5CC8E", 
+                                "#6E8F68", 
+                                "#265142"))
+
 
 # Misc --------------------------------------------------------------------
 
@@ -26,8 +43,6 @@ tfff_label_size <- tfff_base_size * 3
 
 
 # Themes ------------------------------------------------------------------
-
-# font_import("Calibri")
 
 tfff_base_theme <- theme(
      panel.grid.minor = element_blank(),

@@ -60,11 +60,7 @@ race_ethnicity_data <- read_excel(here("data", "obtn-by-county.xlsx"),
           population == "percentage_of_population_multi_racial_non_latino" ~ "Multiracial",
           population == "percentage_of_population_other_race_non_latino" ~ "Other Race",
           population == "percentage_of_population_latino" ~ "Latino"
-     )) %>% 
-     group_by(population) %>% 
-     mutate(tertile = ntile(pct, 3)) %>% 
-     mutate(tertile_numeric = as.numeric(tertile)) %>% 
-     ungroup()
+     )) 
 
 race_ethnicity_groups <- race_ethnicity_data %>% 
      distinct(population) %>% 
@@ -74,7 +70,19 @@ race_ethnicity_groups <- race_ethnicity_data %>%
 # Get geodata -------------------------------------------------------------
 
 by_county_by_pct_within_county <- dk_oregon_counties_geodata() %>% 
-     left_join(race_ethnicity_data, by = c("name" = "geography")) 
+     left_join(race_ethnicity_data, by = c("name" = "geography")) %>%
+     group_by(population) %>% 
+     mutate(tertile = ntile(pct, 3)) %>% 
+     mutate(tertile_numeric = as.numeric(tertile)) %>% 
+     ungroup() %>% 
+     mutate(tertile_label = case_when(
+          tertile_numeric == 1 ~ "Bottom third",
+          tertile_numeric == 2 ~ "Middle third",
+          tertile_numeric == 3 ~ "Top third"
+     )) %>% 
+     mutate(tertile_label = factor(tertile_label, levels = c("Top third", 
+                                                             "Middle third",
+                                                             "Bottom third"))) 
 
 oregon_counties_geodata <- dk_oregon_counties_geodata() %>% 
      left_join(race_ethnicity_data, by = c("name" = "geography")) 
@@ -88,13 +96,12 @@ dk_make_race_ethnicity_map <- function(race_ethnicity_group) {
           filter(population == race_ethnicity_group)
      
      ggplot(oregon_counties_geodata_filtered) +
-          geom_sf(aes(fill = pct),
-                  # fill =  tfff_dark_green,
+          geom_sf(aes(fill = tertile_label),
                   color = "white") +
           coord_sf(datum = NA) +
-          scale_fill_gradient(low = tfff_light_green,
-                              high = tfff_dark_green,
-                              labels = percent_format(1)) +
+          scale_fill_manual(values = rev(c("#B5CC8E", 
+                                           "#6E8F68", 
+                                           "#265142"))) +
           tfff_map_theme +
           theme(legend.position = "bottom") +
           guides(fill = guide_legend(nrow = 1))
@@ -129,15 +136,28 @@ by_county_by_number_within_county <- dk_oregon_counties_geodata() %>%
 
 ```{r}
 by_county_by_number_within_county_filtered <- by_county_by_number_within_county %>% 
-     filter(population == "Latino")
+     filter(population == "Latino") %>% 
+     group_by(population) %>% 
+     mutate(tertile = ntile(group_population, 3)) %>% 
+     mutate(tertile_numeric = as.numeric(tertile)) %>% 
+     mutate(tertile_label = case_when(
+          tertile_numeric == 1 ~ "Bottom third",
+          tertile_numeric == 2 ~ "Middle third",
+          tertile_numeric == 3 ~ "Top third"
+     )) %>% 
+     mutate(tertile_label = factor(tertile_label, levels = c("Top third", 
+                                                             "Middle third",
+                                                             "Bottom third",
+                                                             "ID")))
+
 
 ggplot(by_county_by_number_within_county_filtered) +
-     geom_sf(aes(fill = group_population),
-             # fill =  tfff_dark_green,
+     geom_sf(aes(fill = tertile_label),
              color = "white") +
      coord_sf(datum = NA) +
-     scale_fill_gradient(low = tfff_light_green,
-                         high = tfff_dark_green) +
+     scale_fill_manual(values = rev(c("#B5CC8E", 
+                                      "#6E8F68", 
+                                      "#265142"))) +
      tfff_map_theme +
      theme(legend.position = "bottom") +
      guides(fill = guide_legend(nrow = 1))
@@ -167,14 +187,25 @@ race_ethnicity_by_tract <- read_excel(here("data", "race-ethnicity-by-tract.xlsx
 oregon_tracts_geodata <- tracts("OR", cb = T, class="sf") %>% 
      clean_names() %>% 
      left_join(race_ethnicity_by_tract, by = c("geoid" = "id2")) %>% 
-     filter(str_detect(group, "estimate_hispanic_or_latino"))
+     filter(str_detect(group, "estimate_hispanic_or_latino")) %>% 
+     mutate(tertile = ntile(pct, 3)) %>% 
+     mutate(tertile_numeric = as.numeric(tertile)) %>% 
+     ungroup() %>% 
+     mutate(tertile_label = case_when(
+          tertile_numeric == 1 ~ "Bottom third",
+          tertile_numeric == 2 ~ "Middle third",
+          tertile_numeric == 3 ~ "Top third"
+     )) %>% 
+     mutate(tertile_label = factor(tertile_label, levels = c("Top third", 
+                                                             "Middle third",
+                                                             "Bottom third"))) 
 
 
 ```
 
 ```{r}
 ggplot(oregon_tracts_geodata) +
-     geom_sf(aes(fill = pct),
+     geom_sf(aes(fill = tertile_label),
              color = "transparent",
              size = .1) +
      geom_sf(data = oregon_counties_geodata,
@@ -182,9 +213,9 @@ ggplot(oregon_tracts_geodata) +
              color = "white",
              size = 0.2) +
      coord_sf(datum = NA) +
-     scale_fill_gradient(low = tfff_light_green,
-                         high = tfff_dark_green,
-                         labels = percent_format(1)) +
+     scale_fill_manual(values = rev(c("#B5CC8E", 
+                                      "#6E8F68", 
+                                      "#265142"))) +
      tfff_map_theme +
      theme(legend.position = "bottom") +
      guides(fill = guide_legend(nrow = 1))
@@ -197,7 +228,7 @@ ggplot(oregon_tracts_geodata) +
 ```{r include = F}
 
 tract_total_populations <- read_excel(here("data", "race-ethnicity-by-tract.xlsx"),
-                                                                 skip = 2) %>% 
+                                      skip = 2) %>% 
      clean_names() %>% 
      filter(str_detect(geography, "Tract")) %>% 
      select(id2, estimate_total) %>% 
@@ -205,13 +236,24 @@ tract_total_populations <- read_excel(here("data", "race-ethnicity-by-tract.xlsx
 
 by_tract_by_number <- oregon_tracts_geodata %>% 
      left_join(tract_total_populations, by = c("geoid" = "id2")) %>% 
-     mutate(group_population = pct * estimate_total) 
+     mutate(group_population = pct * estimate_total) %>% 
+     mutate(tertile = ntile(group_population, 3)) %>% 
+     mutate(tertile_numeric = as.numeric(tertile)) %>% 
+     mutate(tertile_label = case_when(
+          tertile_numeric == 1 ~ "Bottom third",
+          tertile_numeric == 2 ~ "Middle third",
+          tertile_numeric == 3 ~ "Top third"
+     )) %>% 
+     mutate(tertile_label = factor(tertile_label, levels = c("Top third", 
+                                                             "Middle third",
+                                                             "Bottom third",
+                                                             "ID")))
 
 ```
 
 ```{r}
 ggplot(by_tract_by_number) +
-     geom_sf(aes(fill = group_population),
+     geom_sf(aes(fill = tertile_label),
              color = "transparent",
              size = .1) +
      geom_sf(data = oregon_counties_geodata,
@@ -219,8 +261,9 @@ ggplot(by_tract_by_number) +
              color = "white",
              size = 0.2) +
      coord_sf(datum = NA) +
-     scale_fill_gradient(low = tfff_light_green,
-                         high = tfff_dark_green) +
+         scale_fill_manual(values = rev(c("#B5CC8E", 
+                                      "#6E8F68", 
+                                      "#265142"))) +
      tfff_map_theme +
      theme(legend.position = "bottom") +
      guides(fill = guide_legend(nrow = 1))

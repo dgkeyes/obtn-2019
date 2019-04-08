@@ -41,22 +41,25 @@ dk_make_inset_map <- function(county) {
           tfff_map_theme
 }
 
-dk_save_inset_map <- function(county, plotwidth, plotheight) {
+dk_save_inset_map <- function(county) {
      county <- str_to_lower(county)
-     county <- str_replace(county, " ", "-")
-     
-     ggsave(filename = paste0("plots/misc/inset-maps/",
+     county <- str_replace_all(county, " ", "-")
+
+
+     ggsave(filename = paste0("plots/by-county/",
+                              county,
+                              "/2019-inset-map-",
                               county,
                               ".pdf"),
             device = cairo_pdf,
-            width = plotwidth,
-            height = plotheight)
-     }
+            width = 1.2313,
+            height = 1.1225)
+}
 
 
 
 for (i in 1:36) {
      dk_make_inset_map(oregon_counties[i])
-     dk_save_inset_map(oregon_counties[i], 8.5, 11)
+     dk_save_inset_map(oregon_counties[i])
 }
 

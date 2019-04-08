@@ -36,22 +36,30 @@ median_income_data <- read_excel(here("data", "obtn-by-county.xlsx"),
 
 # Plot --------------------------------------------------------------------
 
-temp <- median_income_data %>% 
-     filter(geography %in% c("Sherman", "Oregon")) %>% 
+dk_make_median_income_plot <- function(county_name) {
+
+median_income_data_filtered <- median_income_data %>% 
+     filter(geography %in% c(county_name, "Oregon")) %>% 
+     mutate(type = case_when(
+          geography == "Oregon" ~ "state",
+          TRUE ~ "county"
+     )) %>% 
+     mutate(geography = fct_reorder(geography, type)) %>% 
      mutate(geography = fct_rev(geography))
 
-ggplot(temp, aes(geography, median_income,
+ggplot(median_income_data_filtered, aes(geography, median_income,
                  fill = geography)) +
      geom_col(width = 0.75) +
      # Add county/state name
-     geom_text(label = temp$geography,
-               aes(geography, 0),
-               hjust = -0.125,
+     geom_text(label = median_income_data_filtered$geography,
+               aes(geography, 2000),
+               hjust = 0,
                color = "white",
                family = "Calibri") +
      # Add median income amount text
-     geom_text(label = dollar(temp$median_income),
-               aes(geography, median_income * .85),
+     geom_text(label = dollar(median_income_data_filtered$median_income),
+               aes(geography, median_income - 2000),
+               hjust = 1,
                color = "white",
                family = "Calibri") +
      scale_fill_manual(values = c(tfff_medium_gray, tfff_dark_green)) +
@@ -60,6 +68,26 @@ ggplot(temp, aes(geography, median_income,
      coord_flip() +
      tfff_bar_chart_theme
 
-ggsave("temp.pdf", device = cairo_pdf,
-       width = 2.43, 
-       height = .61)
+}
+
+dk_save_median_income_plot <- function(county, plotwidth, plotheight) {
+     county <- str_to_lower(county)
+     county <- str_replace_all(county, " ", "-")
+     
+     ggsave(filename = paste0("plots/by-county/",
+                              county,
+                              "/2019-median-income-",
+                              county,
+                              ".pdf"),
+            device = cairo_pdf,
+            width = plotwidth,
+            height = plotheight)
+}
+
+
+oregon_counties <- dk_get_oregon_counties()
+
+for (i in 1:36) {
+     dk_make_median_income_plot(oregon_counties[i])
+     dk_save_median_income_plot(oregon_counties[i], 2.43, .61)
+}
