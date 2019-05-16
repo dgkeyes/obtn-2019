@@ -71,6 +71,8 @@ dk_save_employment_plot <- function(industry_name) {
             height = 1.5)
 }
 
+dk_make_employment_plot("Food services and drinking places")
+
 
 employment_industries_vector <- employment_industries %>% 
      distinct(industry) %>% 

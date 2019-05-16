@@ -61,7 +61,7 @@ population_pyramid <- read_excel(here("data", "obtn-by-county.xlsx"),
      mutate(pct = case_when(
           pct < .01 ~ .01,
           TRUE ~ pct
-     )) %>% 
+     )) %>%
      # Add padding to age_labels variables that are shorter so they also show up equal length
      mutate(age_labels = case_when(
           str_length(age) == 3 ~ str_pad(age, width = 7, side = "both", pad = " "),
@@ -97,7 +97,7 @@ dk_population_pyramid_plot <- function(county_name) {
           population_pyramid_labels_placement <- .01
           
           population_pyramid_filtered <- population_pyramid_filtered %>% 
-               mutate(pct = ifelse(pct <= .01, .008, pct)) %>%
+               # mutate(pct = ifelse(pct <= .01, .008, pct)) %>%
                mutate(pct_formatted = ifelse(gender == "female", -pct, pct))
           
      } else if (largest_group_pct < .06) {
@@ -109,7 +109,7 @@ dk_population_pyramid_plot <- function(county_name) {
           population_pyramid_labels_placement <- .01
           
           population_pyramid_filtered <- population_pyramid_filtered %>% 
-               mutate(pct = ifelse(pct <= .011, .012, pct)) %>%
+               # mutate(pct = ifelse(pct <= .011, .012, pct)) %>%
                mutate(pct_formatted = ifelse(gender == "female", -pct, pct))
           
      } else if (largest_group_pct < .08) {
@@ -180,13 +180,10 @@ dk_population_pyramid_plot <- function(county_name) {
                              labels = population_pyramid_labels) +
           scale_fill_manual(values = c(tfff_light_green, tfff_dark_green)) +
           tfff_population_pyramid_theme
-     
-     
-     
 }
 
-
-
+dk_population_pyramid_plot("Benton")
+dk_save_county_population_pyramid("Benton")
 # Save functions -----------------------------------------------------------
 
 dk_save_county_population_pyramid <- function(county) {
@@ -202,6 +199,7 @@ dk_save_county_population_pyramid <- function(county) {
             width = 3.27,
             height = 4.0752)
 }
+
 
 
 

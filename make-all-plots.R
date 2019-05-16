@@ -16,8 +16,10 @@ source(here("R", "employment-industries.R"))
 source(here("R", "inset-maps.R"))
 source(here("R", "median-income.R"))
 source(here("R", "population-pyramids.R"))
+source(here("R", "race-ethnicity-bar-charts.R"))
 source(here("R", "race-ethnicity-statewide-maps.R"))
-source(here("R", "race-ethnicity.R"))
+source(here("R", "tribes.R"))
+
 
 
 # Copy to Dropbox ---------------------------------------------------------
